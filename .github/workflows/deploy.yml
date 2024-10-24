@@ -1,0 +1,64 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Log in to DockerHub
+      run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+    - name: Build Docker image
+      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/hello-world:latest .
+
+    - name: Push Docker image
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/hello-world:latest
+
+    - name: SonarQube scan
+      uses: sonarsource/sonarqube-scan-action@v1.0.0
+      with:
+        host_url: ${{ secrets.SONARQUBE_URL }}
+        token: ${{ secrets.SONARQUBE_TOKEN }}
+
+    - name: Run Trivy scan
+      run: docker run --rm aquasec/trivy image ${{ secrets.DOCKERHUB_USERNAME }}/hello-world:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up kubectl
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x ./kubectl
+        mkdir -p $HOME/bin && mv ./kubectl $HOME/bin/kubectl
+        export PATH=$PATH:$HOME/bin
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: <your-region>
+
+    - name: Update kubeconfig
+      run: aws eks update-kubeconfig --name <your-cluster-name> --region <your-region>
+
+    - name: Apply Kubernetes manifests
+      run: kubectl apply -f deployment.yml
