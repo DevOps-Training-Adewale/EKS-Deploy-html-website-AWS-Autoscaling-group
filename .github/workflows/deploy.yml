@@ -32,8 +32,6 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
       with:
         projectBaseDir: '.'  
-        args: >
-          -Dsonar.host.url=https://sonarcloud.io
 
     - name: Run Trivy scan
       run: docker run --rm aquasec/trivy image ${{ secrets.DOCKERHUB_USERNAME }}/hello-world:latest
