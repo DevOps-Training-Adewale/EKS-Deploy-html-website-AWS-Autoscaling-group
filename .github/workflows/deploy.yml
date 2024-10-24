@@ -29,8 +29,7 @@ jobs:
       uses: sonarsource/sonarqube-scan-action@v1.0.0
       with:
         host_url: ${{ secrets.SONARQUBE_URL }}
-        env:
-          SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
 
     - name: Run Trivy scan
       run: docker run --rm aquasec/trivy image ${{ secrets.DOCKERHUB_USERNAME }}/hello-world:latest
