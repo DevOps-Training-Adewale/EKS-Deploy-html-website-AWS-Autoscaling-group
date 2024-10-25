@@ -22,7 +22,7 @@ resource "aws_launch_template" "app" {
 resource "aws_autoscaling_group" "app" {
   launch_template {
     id      = aws_launch_template.app.id
-    version = "$DEFAULT"
+    version = '$LATEST'
   }
 
   min_size         = 1
