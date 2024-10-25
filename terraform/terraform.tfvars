@@ -1,4 +1,6 @@
 aws_region = "us-east-1"
+aws_access_key = "AKIAZQ3DSREDOF7MO3SB"
+aws_secret_key = "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"
 vpc_id = "vpc-05b1b5ad0c86820c9"
 subnet_id = "subnet-09a45ccf4d1419369,subnet-07011400bdaa8928a,subnet-0489436a55167ec93"
 security_group_id = "sg-0eb6874861ddecab8"
