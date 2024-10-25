@@ -25,44 +25,32 @@ jobs:
     - name: Push Docker image
       run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/hello-world:latest
 
-    - name: SonarQube Scan
-      uses: sonarsource/sonarqube-scan-action@v1.0.0
-      env:
-        SONAR_HOST_URL: ${{ secrets.SONARQUBE_URL }}
-        SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
-      with:
-        projectBaseDir: '.'  
-        args: >
-          -Dsonar.projectKey=html
-
     - name: Run Trivy scan
       run: docker run --rm aquasec/trivy image ${{ secrets.DOCKERHUB_USERNAME }}/hello-world:latest
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up kubectl
-      run: |
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-        chmod +x ./kubectl
-        mkdir -p $HOME/bin && mv ./kubectl $HOME/bin/kubectl
-        export PATH=$PATH:$HOME/bin
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v1
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+    - name: Initialize Terraform
+      run: terraform init
+      working-directory: ./terraform
 
-    - name: Update kubeconfig
-      run: aws eks update-kubeconfig --name htmlcluster --region us-east-1
+    - name: Plan Terraform
+      run: terraform plan
+      working-directory: ./terraform
 
-    - name: Apply Kubernetes manifests
-      run: kubectl apply -f deployment.yml
+    - name: Apply Terraform
+      run: terraform apply -auto-approve
+      working-directory: ./terraform
+
+    - name: Get Load Balancer DNS
+      run: echo "Application is available at http://$(terraform output -raw load_balancer_dns)"
+      working-directory: ./terraform
