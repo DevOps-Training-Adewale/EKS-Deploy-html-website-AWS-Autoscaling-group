@@ -5,7 +5,7 @@ provider "aws" {
 
 resource "aws_launch_template" "app" {
   name          = "app-launch-template"
-  image_id      = "ami-08cbf15038e1cb36a" # Use the latest Amazon Linux 2 AMI
+  image_id      = "ami-0cad6ee50670e3d0e" # Use the latest Amazon Linux 2 AMI
   instance_type = "t2.micro"
   key_name      = var.key_pair
 
