@@ -1,7 +1,7 @@
 provider "aws" {
   region = var.aws_region
-  access_key = ${{ secrets.AWS_ACCESS_KEY_ID }}
-  secret_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  access_key = AKIAZQ3DSREDOF7MO3SB
+  secret_key = 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
 }
 
 resource "aws_launch_template" "app" {
