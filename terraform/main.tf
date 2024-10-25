@@ -15,7 +15,7 @@ resource "aws_launch_template" "app" {
               yum install -y docker
               service docker start
               docker run -d -p 80:80 ${var.docker_image}
-              EOF>>
+              EOF
 }
 
 resource "aws_autoscaling_group" "app" {
