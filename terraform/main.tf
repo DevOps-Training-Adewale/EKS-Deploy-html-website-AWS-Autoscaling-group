@@ -28,7 +28,7 @@ resource "aws_autoscaling_group" "app" {
   max_size         = 3
   desired_capacity = 1
 
-  vpc_zone_identifier = [var.subnet_id]
+  vpc_zone_identifier = [var.subnet_ids]
 
   tag {
     key                 = "Name"
