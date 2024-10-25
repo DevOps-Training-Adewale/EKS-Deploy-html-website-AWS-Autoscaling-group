@@ -11,9 +11,11 @@ resource "aws_launch_template" "app" {
 
   user_data = base64encode(<<-EOF
               #!/bin/bash
-              yum update -y
-              yum install -y docker
-              service docker start
+              sudo apt update
+              sudo apt install docker.io -y
+              sudo usermod -aG docker ubuntu
+              sudo systemctl restart docker
+              sudo chmod 777 /var/run/docker.sock
               docker run -d -p 80:80 ${var.docker_image}
               EOF
   )
