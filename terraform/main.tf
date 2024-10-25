@@ -7,6 +7,7 @@ resource "aws_launch_template" "app" {
   name          = "app-launch-template"
   image_id      = "ami-0c55b159cbfafe1f0" # Use the latest Amazon Linux 2 AMI
   instance_type = "t2.micro"
+  key_name      = var.key_pair
 
   user_data = <<-EOF
               #!/bin/bash
@@ -14,7 +15,7 @@ resource "aws_launch_template" "app" {
               yum install -y docker
               service docker start
               docker run -d -p 80:80 ${var.docker_image}
-              EOF
+              EOF>>
 }
 
 resource "aws_autoscaling_group" "app" {
