@@ -9,13 +9,14 @@ resource "aws_launch_template" "app" {
   instance_type = "t2.micro"
   key_name      = var.key_pair
 
-  user_data = <<-EOF
+  user_data = base64encode(<<-EOF
               #!/bin/bash
               yum update -y
               yum install -y docker
               service docker start
               docker run -d -p 80:80 ${var.docker_image}
               EOF
+  )
 }
 
 resource "aws_autoscaling_group" "app" {
