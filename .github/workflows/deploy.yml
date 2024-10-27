@@ -22,6 +22,11 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
+    # Step 5: Set Up kubectl for EKS
+    - name: Set up kubectl
+      run: |
+        aws eks --region us-east-1 update-kubeconfig --name my-eks-cluster
+
     # Step 3: Install Terraform
     - name: Install Terraform
       uses: hashicorp/setup-terraform@v1
@@ -34,11 +39,6 @@ jobs:
       run: |
         terraform init
         terraform apply -auto-approve
-
-    # Step 5: Set Up kubectl for EKS
-    - name: Set up kubectl
-      run: |
-        aws eks --region us-east-1 update-kubeconfig --name my-eks-cluster
 
     # Step 6: Build Docker Image
     - name: Build Docker Image
