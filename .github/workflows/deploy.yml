@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline for EKS Deployment
 
 on:
   push:
@@ -6,77 +6,60 @@ on:
       - main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-
-    - name: Log in to DockerHub
-      run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-
-    - name: Build Docker image
-      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/hello-world:latest .
-
-    - name: Push Docker image
-      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/hello-world:latest
-
-    - name: Run Trivy scan
-      run: docker run --rm aquasec/trivy image ${{ secrets.DOCKERHUB_USERNAME }}/hello-world:latest
-
   deploy:
-    needs: build
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    # Step 1: Checkout Code
+    - name: Checkout Code
       uses: actions/checkout@v2
-    
-    - name: Install AWS CLI
-      run: |
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-        unzip awscliv2.zip
-        sudo ./aws/install --update
 
-    - name: Configure AWS credentials
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      run: |
-        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-        aws configure set default.region us-east-1  # Set your AWS region here
+    # Step 2: Set up AWS CLI
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
 
-    - name: Verify AWS CLI Configuration
-      run: aws sts get-caller-identity
-
-    - name: Set up Terraform
+    # Step 3: Install Terraform
+    - name: Install Terraform
       uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: 1.1.0
 
-    - name: Format Terraform
-      run: terraform fmt
+    # Step 4: Terraform Init & Apply (Provision EKS)
+    - name: Terraform Init & Apply
       working-directory: ./terraform
-      
-    - name: Initialize Terraform
-      run: terraform init
-      working-directory: ./terraform
-  
-    - name: Validate Terraform
-      run: terraform validate
-      working-directory: ./terraform  
-    
-    - name: Plan Terraform
-      run: terraform plan
-      working-directory: ./terraform
+      run: |
+        terraform init
+        terraform apply -auto-approve
 
-    - name: Apply Terraform
-      run: terraform apply -auto-approve
-      working-directory: ./terraform
+    # Step 5: Set Up kubectl for EKS
+    - name: Set up kubectl
+      run: |
+        aws eks --region us-east-1 update-kubeconfig --name my-eks-cluster
 
-    - name: Get Load Balancer DNS
-      run: echo "Application is available at http://$(terraform output -raw load_balancer_dns)"
-      working-directory: ./terraform
+    # Step 6: Build Docker Image
+    - name: Build Docker Image
+      run: |
+        docker build -t html-app:latest .
+        docker tag html-app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/html-app:latest
+
+    # Step 7: Push Docker Image to Amazon ECR
+    - name: Push Docker Image to ECR
+      run: |
+        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-west-2.amazonaws.com
+        docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/html-app:latest
+
+    # Step 8: Deploy to EKS
+    - name: Deploy to EKS
+      run: |
+        kubectl apply -f k8s/deployment.yml
+        kubectl apply -f k8s/service.yml
+
+    # Step 9: Set Up Monitoring with Prometheus and Grafana
+    - name: Deploy Monitoring Tools
+      run: |
+        kubectl apply -f k8s/prometheus.yml
+        kubectl apply -f k8s/grafana.yml
