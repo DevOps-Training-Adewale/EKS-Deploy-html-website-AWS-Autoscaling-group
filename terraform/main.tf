@@ -8,6 +8,11 @@ resource "aws_vpc" "eks_vpc" {
   enable_dns_hostnames = true
 }
 
+# Fetch available availability zones in the current AWS region
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
 resource "aws_subnet" "eks_subnets" {
   count = 2
   vpc_id = aws_vpc.eks_vpc.id
