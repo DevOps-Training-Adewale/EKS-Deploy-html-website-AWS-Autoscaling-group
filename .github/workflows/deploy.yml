@@ -27,19 +27,6 @@ jobs:
       run: |
         aws eks --region us-east-1 update-kubeconfig --name my-eks-cluster
 
-    # Step 3: Install Terraform
-    - name: Install Terraform
-      uses: hashicorp/setup-terraform@v1
-      with:
-        terraform_version: 1.1.0
-
-    # Step 4: Terraform Init & Apply (Provision EKS)
-    - name: Terraform Init & Apply
-      working-directory: ./terraform
-      run: |
-        terraform init
-        terraform apply -auto-approve
-
     # Step 6: Build Docker Image
     - name: Build Docker Image
       run: |
@@ -57,6 +44,19 @@ jobs:
       run: |
         kubectl apply -f k8s/deployment.yml
         kubectl apply -f k8s/service.yml
+
+    # Step 3: Install Terraform
+    - name: Install Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: 1.1.0
+
+    # Step 4: Terraform Init & Apply (Provision EKS)
+    - name: Terraform Init & Apply
+      working-directory: ./terraform
+      run: |
+        terraform init
+        terraform apply -auto-approve
 
     # Step 9: Set Up Monitoring with Prometheus and Grafana
     - name: Deploy Monitoring Tools
