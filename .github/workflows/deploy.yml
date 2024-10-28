@@ -28,13 +28,6 @@ jobs:
         docker build -t html-app:latest .
         docker tag html-app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/html-app:latest
 
-    # Step 7: Push Docker Image to Amazon ECR
-    - name: Push Docker Image to ECR
-      run: |
-        aws ecr create-repository --repository-name html-app --region us-east-1
-        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
-        docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/html-app:latest
-
     # Step 3: Install Terraform
     - name: Install Terraform
       uses: hashicorp/setup-terraform@v1
